@@ -1,5 +1,7 @@
 import { createInterface } from 'readline';
 import * as fs from 'fs';
+import { exec, execFileSync } from 'child_process';
+import * as path from 'path';
 
 const shellCommands = ['exit', 'echo', 'type'];
 
@@ -11,7 +13,7 @@ const rl = createInterface({
 const prompt = '$ ';
 rl.setPrompt(prompt);
 
-const path = process.env.PATH;
+const pathEnv = process.env.PATH;
 
 rl.on('line', (resp) => {
   const [command, ...args] = resp.split(' ');
@@ -24,13 +26,12 @@ rl.on('line', (resp) => {
       break;
     case 'echo':
       console.log(args.join(' '));
-      rl.prompt();
       break;
     case 'type':
       if (shellCommands.includes(args[0])) {
         console.log(`${args[0]} is a shell builtin`);
       } else {
-        const paths = path?.split(':') ?? [];
+        const paths = pathEnv?.split(path.delimiter) ?? [];
 
         const found = paths.find((path) => {
           try {
@@ -47,12 +48,26 @@ rl.on('line', (resp) => {
           console.log(`${args[0]} not found`);
         }
       }
-      rl.prompt();
       break;
     default:
-      console.log(`${resp}: command not found`);
-      rl.prompt();
+      const paths = pathEnv?.split(path.delimiter) ?? [];
+
+      for (const path of paths) {
+        try {
+          const contents = fs.readdirSync(path);
+
+          if (contents.includes(command)) {
+            const filePath = `${path}/${command}`;
+            const output = execFileSync(filePath, args);
+            console.log(output.toString());
+            break;
+          }
+        } catch (e) {
+          console.log(`${command}: command not found`);
+        }
+      }
   }
+  rl.prompt();
 });
 
 rl.prompt();
