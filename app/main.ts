@@ -1,4 +1,5 @@
 import { createInterface } from 'readline';
+import * as fs from 'fs';
 
 const shellCommands = ['exit', 'echo', 'type'];
 
@@ -9,6 +10,8 @@ const rl = createInterface({
 
 const prompt = '$ ';
 rl.setPrompt(prompt);
+
+const path = process.env.PATH;
 
 rl.on('line', (resp) => {
   const [command, ...args] = resp.split(' ');
@@ -27,7 +30,22 @@ rl.on('line', (resp) => {
       if (shellCommands.includes(args[0])) {
         console.log(`${args[0]} is a shell builtin`);
       } else {
-        console.log(`${args[0]} not found`);
+        const paths = path?.split(':') ?? [];
+
+        const found = paths.find((path) => {
+          try {
+            const contents = fs.readdirSync(path);
+            return contents.includes(args[0]);
+          } catch (e) {
+            return false;
+          }
+        });
+
+        if (found) {
+          console.log(`${args[0]} is ${found}/${args[0]}`);
+        } else {
+          console.log(`${args[0]} not found`);
+        }
       }
       rl.prompt();
       break;
