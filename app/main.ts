@@ -58,8 +58,8 @@ rl.on('line', (resp) => {
 
           if (contents.includes(command)) {
             const filePath = `${path}/${command}`;
-            const output = execFileSync(filePath, args);
-            console.log(output.toString());
+            const output = execFileSync(filePath, args).toString().trim();
+            console.log(output);
             break;
           }
         } catch (e) {
