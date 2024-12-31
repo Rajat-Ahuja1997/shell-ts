@@ -54,10 +54,19 @@ rl.on('line', (resp) => {
       console.log(workingDir);
       break;
     case 'cd':
-      try {
-        process.chdir(args[0]);
-      } catch (e) {
-        console.log(`cd: ${args[0]}: No such file or directory`);
+      if (args[0] === '~') {
+        const homeDir = process.env.HOME;
+        if (!homeDir) {
+          console.log('cd: HOME not set');
+        } else {
+          process.chdir(homeDir);
+        }
+      } else {
+        try {
+          process.chdir(args[0]);
+        } catch (e) {
+          console.log(`cd: ${args[0]}: No such file or directory`);
+        }
       }
       break;
     default:
