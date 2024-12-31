@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { exec, execFileSync } from 'child_process';
 import * as path from 'path';
 
-const shellCommands = ['exit', 'echo', 'type'];
+const shellCommands = ['exit', 'echo', 'type', 'pwd', 'cd'];
 
 const rl = createInterface({
   input: process.stdin,
@@ -47,6 +47,17 @@ rl.on('line', (resp) => {
         } else {
           console.log(`${args[0]} not found`);
         }
+      }
+      break;
+    case 'pwd':
+      const workingDir = process.cwd();
+      console.log(workingDir);
+      break;
+    case 'cd':
+      try {
+        process.chdir(args[0]);
+      } catch (e) {
+        console.log(`cd: ${args[0]}: No such file or directory`);
       }
       break;
     default:
