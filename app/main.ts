@@ -16,7 +16,16 @@ rl.setPrompt(prompt);
 const pathEnv = process.env.PATH;
 
 rl.on('line', (resp) => {
-  const [command, ...args] = resp.split(' ');
+  const command = resp.split(' ')[0];
+  const remainingInput = resp.slice(command.length).trim();
+
+  let args: string[] = [];
+  if (remainingInput.startsWith("'")) {
+    args = _getArgsInQuotes(remainingInput);
+  } else {
+    args = remainingInput.split(/\s+/).filter(Boolean);
+  }
+
   switch (command) {
     case 'exit':
       if (args.length === 1 && args[0] === '0') {
@@ -69,6 +78,15 @@ rl.on('line', (resp) => {
         }
       }
       break;
+    case 'cat':
+      let res = '';
+      for (const arg of args) {
+        try {
+          res += fs.readFileSync(arg, 'utf8');
+        } catch (e) {}
+      }
+      console.log(res.trim());
+      break;
     default:
       const paths = pathEnv?.split(path.delimiter) ?? [];
 
@@ -91,3 +109,25 @@ rl.on('line', (resp) => {
 });
 
 rl.prompt();
+
+const _getArgsInQuotes = (input: string) => {
+  const quotedArgs: string[] = [];
+  let insideQuotes = false;
+  let currentArg = '';
+
+  for (const char of input) {
+    if (char === "'") {
+      if (insideQuotes) {
+        // we are at the end quotes, save our current arg
+        quotedArgs.push(currentArg);
+        currentArg = '';
+      }
+      insideQuotes = !insideQuotes;
+    } else if (insideQuotes) {
+      // build current arg
+      currentArg += char;
+    }
+  }
+
+  return quotedArgs;
+};
