@@ -3,7 +3,16 @@ import * as fs from 'fs';
 import { exec, execFileSync } from 'child_process';
 import * as path from 'path';
 
-const shellCommands = ['exit', 'echo', 'type', 'pwd', 'cd', 'cat'];
+const shellCommands = [
+  'exit',
+  'echo',
+  'type',
+  'pwd',
+  'cd',
+  'cat',
+  'touch',
+  'ls',
+];
 
 const rl = createInterface({
   input: process.stdin,
@@ -79,6 +88,10 @@ rl.on('line', (resp) => {
           console.log(`cd: ${args[0]}: No such file or directory`);
         }
       }
+      break;
+    case 'ls':
+      const contents = fs.readdirSync(process.cwd()).sort();
+      console.log(contents.join('\n'));
       break;
     case 'cat':
       let res = '';
