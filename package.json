@@ -7,5 +7,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2"
+  },
+  "author": {
+    "name": "Rajat Ahuja",
+    "email": "rahuja445@gmail.com"
   }
 }
