@@ -21,7 +21,9 @@ rl.on('line', (resp) => {
 
   let args: string[] = [];
   if (remainingInput.startsWith("'")) {
-    args = _getArgsInQuotes(remainingInput);
+    args = _getArgsInQuotes(remainingInput, 'single');
+  } else if (remainingInput.startsWith('"')) {
+    args = _getArgsInQuotes(remainingInput, 'double');
   } else {
     args = remainingInput.split(/\s+/).filter(Boolean);
   }
@@ -110,13 +112,13 @@ rl.on('line', (resp) => {
 
 rl.prompt();
 
-const _getArgsInQuotes = (input: string) => {
+const _getArgsInQuotes = (input: string, type: 'single' | 'double') => {
   const quotedArgs: string[] = [];
   let insideQuotes = false;
   let currentArg = '';
 
   for (const char of input) {
-    if (char === "'") {
+    if (char === (type === 'single' ? "'" : '"')) {
       if (insideQuotes) {
         // we are at the end quotes, save our current arg
         quotedArgs.push(currentArg);
