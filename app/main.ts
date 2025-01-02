@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { exec, execFileSync } from 'child_process';
 import * as path from 'path';
 
-const shellCommands = ['exit', 'echo', 'type', 'pwd', 'cd'];
+const shellCommands = ['exit', 'echo', 'type', 'pwd', 'cd', 'cat'];
 
 const rl = createInterface({
   input: process.stdin,
@@ -88,6 +88,9 @@ rl.on('line', (resp) => {
         } catch (e) {}
       }
       console.log(res.trim());
+      break;
+    case 'touch':
+      fs.writeFileSync(args[0], '');
       break;
     default:
       const paths = pathEnv?.split(path.delimiter) ?? [];
