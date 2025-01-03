@@ -12,7 +12,11 @@ const shellCommands = [
   'cat',
   'touch',
   'ls',
+  'rm',
+  'history',
 ];
+
+const history: string[] = [];
 
 const rl = createInterface({
   input: process.stdin,
@@ -36,18 +40,16 @@ rl.on('line', (resp) => {
   } else {
     // replace backslashes with empty string
     remainingInput = remainingInput.replace(/\\/g, '');
-    args = remainingInput.split(/\s+/).filter(Boolean);
+    args = remainingInput
+      .split(/(?<!\\)\s+/)
+      .filter(Boolean)
+      .map((arg) => arg.replace(/\\\s/g, ' '));
   }
 
   switch (command) {
-    case 'exit':
-      if (args.length === 1 && args[0] === '0') {
-        rl.close();
-        process.exit(0);
-      }
-      break;
     case 'echo':
-      console.log(args.join(' '));
+      // we can just print the remaining input verbatim
+      console.log(remainingInput);
       break;
     case 'type':
       if (shellCommands.includes(args[0])) {
@@ -107,6 +109,26 @@ rl.on('line', (resp) => {
     case 'touch':
       fs.writeFileSync(args[0], '');
       break;
+    case 'rm':
+      if (!args[0]) {
+        console.log('rm: missing file to remove');
+      } else {
+        try {
+          fs.unlinkSync(args[0]);
+        } catch (e) {
+          console.log(`rm: ${args[0]}: No such file or directory`);
+        }
+      }
+      break;
+    case 'history':
+      console.log(history.join('\n'));
+      break;
+    case 'exit':
+      if (args.length === 1 && args[0] === '0') {
+        rl.close();
+        process.exit(0);
+      }
+      break;
     default:
       const paths = pathEnv?.split(path.delimiter) ?? [];
 
@@ -125,6 +147,7 @@ rl.on('line', (resp) => {
         }
       }
   }
+  history.push(resp);
   rl.prompt();
 });
 
