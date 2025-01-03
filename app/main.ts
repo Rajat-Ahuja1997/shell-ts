@@ -1,6 +1,6 @@
 import { createInterface } from 'readline';
 import * as fs from 'fs';
-import { exec, execFileSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import * as path from 'path';
 
 const shellCommands = [
@@ -26,7 +26,7 @@ const pathEnv = process.env.PATH;
 
 rl.on('line', (resp) => {
   const command = resp.split(' ')[0];
-  const remainingInput = resp.slice(command.length).trim();
+  let remainingInput = resp.slice(command.length).trim();
 
   let args: string[] = [];
   if (remainingInput.startsWith("'")) {
@@ -34,6 +34,8 @@ rl.on('line', (resp) => {
   } else if (remainingInput.startsWith('"')) {
     args = _getArgsInQuotes(remainingInput, 'double');
   } else {
+    // replace backslashes with empty string
+    remainingInput = remainingInput.replace(/\\/g, '');
     args = remainingInput.split(/\s+/).filter(Boolean);
   }
 
