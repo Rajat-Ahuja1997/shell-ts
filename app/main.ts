@@ -37,11 +37,11 @@ rl.on('line', (resp) => {
   } else if (remainingInput.startsWith('"')) {
     args = _getArgsInQuotes(remainingInput, 'double');
   } else {
-    // replace backslashes with empty string
+    // Split on any whitespace that is unescaped
     args = remainingInput
       .split(/(?<!\\)\s+/)
       .filter(Boolean)
-      .map((arg) => arg.replace(/\\\s/g, ' '));
+      .map((arg) => arg.replace(/\\(.)/g, '$1')); // Replace any backslash with the char after it
   }
 
   switch (command) {
