@@ -45,9 +45,17 @@ rl.on('line', (resp) => {
   }
 
   switch (command) {
-    case 'echo':
-      console.log(args.join(' '));
+    case 'echo': {
+      const redirect = args[1];
+      if (redirect === '>' || redirect === '1>') {
+        const destination = args[2];
+        fs.writeFileSync(destination, args[0]);
+      } else {
+        console.log(args.join(' '));
+      }
+
       break;
+    }
     case 'type':
       if (shellCommands.includes(args[0])) {
         console.log(`${args[0]} is a shell builtin`);
@@ -90,18 +98,41 @@ rl.on('line', (resp) => {
         }
       }
       break;
-    case 'ls':
-      const contents = fs.readdirSync(process.cwd()).sort();
-      console.log(contents.join('\n'));
+    case 'ls': {
+      const dir = args[0] ? args[0] : process.cwd();
+      const contents = fs.readdirSync(dir).sort();
+
+      const redirect = args[1];
+      if (redirect === '>' || redirect === '1>') {
+        const destination = args[2];
+        fs.writeFileSync(destination, contents.join('\n'));
+      } else {
+        console.log(contents.join('\n'));
+      }
       break;
+    }
     case 'cat':
       let res = '';
-      for (const arg of args) {
+      let redirect = false;
+      let destination = '';
+      for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (arg === '>' || arg === '1>') {
+          redirect = true;
+          destination = args[i + 1];
+          break;
+        }
         try {
           res += fs.readFileSync(arg, 'utf8');
-        } catch (e) {}
+        } catch (e) {
+          console.log(`cat: ${arg}: No such file or directory`);
+        }
       }
-      console.log(res.trim());
+      if (!redirect) {
+        console.log(res.trim());
+      } else {
+        fs.writeFileSync(destination, res);
+      }
       break;
     case 'touch':
       fs.writeFileSync(args[0], '');
@@ -153,9 +184,13 @@ rl.prompt();
 const _getArgsInQuotes = (input: string, type: 'single' | 'double') => {
   // replace instance of two single or double quotes next to each other with empty space
   input = input.replace(/('{2}|"{2})/g, '');
+  // replace double backslash with single backslash
+  input = input.replace(/\\{2}/g, '\\');
   const quotedArgs: string[] = [];
   let insideQuotes = false;
   let currentArg = '';
+
+  let nonQuotedPart = '';
 
   for (const char of input) {
     if (char === (type === 'single' ? "'" : '"')) {
@@ -168,7 +203,15 @@ const _getArgsInQuotes = (input: string, type: 'single' | 'double') => {
     } else if (insideQuotes) {
       // build current arg
       currentArg += char;
+    } else {
+      nonQuotedPart += char;
     }
   }
+
+  if (nonQuotedPart.trim()) {
+    const additionalArgs = nonQuotedPart.trim().split(/\s+/).filter(Boolean);
+    quotedArgs.push(...additionalArgs);
+  }
+
   return quotedArgs;
 };
