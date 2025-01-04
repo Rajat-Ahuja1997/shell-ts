@@ -9,7 +9,6 @@ const shellCommands = [
   'type',
   'pwd',
   'cd',
-  'cat',
   'touch',
   'ls',
   'rm',
@@ -39,7 +38,6 @@ rl.on('line', (resp) => {
     args = _getArgsInQuotes(remainingInput, 'double');
   } else {
     // replace backslashes with empty string
-    remainingInput = remainingInput.replace(/\\/g, '');
     args = remainingInput
       .split(/(?<!\\)\s+/)
       .filter(Boolean)
@@ -48,8 +46,7 @@ rl.on('line', (resp) => {
 
   switch (command) {
     case 'echo':
-      // we can just print the remaining input verbatim
-      console.log(remainingInput);
+      console.log(args.join(' '));
       break;
     case 'type':
       if (shellCommands.includes(args[0])) {
@@ -154,6 +151,8 @@ rl.on('line', (resp) => {
 rl.prompt();
 
 const _getArgsInQuotes = (input: string, type: 'single' | 'double') => {
+  // replace instance of two single or double quotes next to each other with empty space
+  input = input.replace(/('{2}|"{2})/g, '');
   const quotedArgs: string[] = [];
   let insideQuotes = false;
   let currentArg = '';
@@ -171,6 +170,5 @@ const _getArgsInQuotes = (input: string, type: 'single' | 'double') => {
       currentArg += char;
     }
   }
-
   return quotedArgs;
 };
