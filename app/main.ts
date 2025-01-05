@@ -13,6 +13,7 @@ const shellCommands = [
   'ls',
   'rm',
   'history',
+  'cp',
 ];
 
 const redirectOutputs = ['>', '1>', '>>', '1>>'];
@@ -181,6 +182,17 @@ rl.on('line', (resp) => {
         process.exit(0);
       }
       break;
+    case 'cp': {
+      //
+      const source = args[0];
+      const destination = args[1];
+      if (!source || !destination) {
+        console.log('cp: missing source or destination');
+        break;
+      }
+      fs.copyFileSync(source, destination);
+      break;
+    }
     default:
       const paths = pathEnv?.split(path.delimiter) ?? [];
 
