@@ -15,6 +15,8 @@ const shellCommands = [
   'history',
 ];
 
+const redirectOutputs = ['>', '1>', '>>', '1>>'];
+
 const history: string[] = [];
 
 const rl = createInterface({
@@ -47,16 +49,17 @@ rl.on('line', (resp) => {
   switch (command) {
     case 'echo': {
       const { files, redirect, destination } = _parseRedirect(args);
+      // output is the files joined by spaces with newlines between each file
       const output = files.join(' ');
       if (redirect === '2>') {
         try {
           console.log(output);
-          fs.writeFileSync(destination, '');
+          fs.appendFileSync(destination, '');
         } catch (e) {
-          fs.writeFileSync(destination, output);
+          fs.appendFileSync(destination, output);
         }
-      } else if (redirect === '>' || redirect === '1>') {
-        fs.writeFileSync(destination, output);
+      } else if (redirect && redirectOutputs.includes(redirect)) {
+        fs.appendFileSync(destination, output + '\n');
       } else {
         console.log(output);
       }
@@ -113,14 +116,14 @@ rl.on('line', (resp) => {
       try {
         const contents = fs.readdirSync(dir).sort();
 
-        if (redirect === '>' || redirect === '1>') {
-          fs.writeFileSync(destination, contents.join('\n'));
+        if (redirect && redirectOutputs.includes(redirect)) {
+          fs.appendFileSync(destination, contents.join('\n'));
         } else {
           console.log(contents.join('\n'));
         }
       } catch (e) {
         if (redirect === '2>') {
-          fs.writeFileSync(destination, error);
+          fs.appendFileSync(destination, error);
         } else {
           console.log(error);
         }
@@ -206,8 +209,8 @@ rl.prompt();
  * @returns object with files, redirect, and destination
  */
 const _parseRedirect = (args: string[]) => {
-  const redirectionIndex = args.findIndex(
-    (arg) => arg === '>' || arg === '1>' || arg === '2>'
+  const redirectionIndex = args.findIndex((arg) =>
+    redirectOutputs.includes(arg)
   );
 
   if (redirectionIndex === -1) {
