@@ -131,39 +131,26 @@ rl.on('line', (resp) => {
       break;
     }
     case 'cat':
-      let res = '';
-      let redirect = false;
-      let redirectErr = false;
-      let destination = '';
-      const errors: string[] = [];
+      const { files, redirect, destination } = _parseRedirect(args);
+      const { res, errors } = _readFiles(files);
 
-      for (let i = 0; i < args.length; i++) {
-        const arg = args[i];
-        if (arg === '>' || arg === '1>' || arg === '2>') {
-          if (arg === '2>') {
-            redirectErr = true;
-          } else {
-            redirect = true;
-          }
-          destination = args[i + 1];
-          break;
-        }
-        try {
-          res += fs.readFileSync(arg, 'utf8');
-        } catch (e) {
-          const err = `cat: ${arg}: No such file or directory`;
-          errors.push(err);
-        }
-      }
-      if (!redirect) {
-        console.log(res.trim());
-      } else {
-        fs.writeFileSync(destination, res);
-      }
-      if (errors.length > 0) {
-        if (redirectErr) {
+      if (redirect === '2>') {
+        if (errors.length > 0) {
           fs.writeFileSync(destination, errors.join('\n'));
-        } else {
+        }
+        if (res) {
+          console.log(res.trim());
+        }
+      } else if (redirect === '1>' || redirect === '>') {
+        fs.writeFileSync(destination, res);
+        if (errors.length > 0) {
+          console.log(errors.join('\n'));
+        }
+      } else {
+        if (res) {
+          console.log(res.trim());
+        }
+        if (errors.length > 0) {
           console.log(errors.join('\n'));
         }
       }
@@ -214,6 +201,52 @@ rl.on('line', (resp) => {
 });
 
 rl.prompt();
+
+/**
+ * Parse the arguments to read, redirect, and destination
+ * of redirection.
+ * @param args list of arguments
+ * @returns object with files, redirect, and destination
+ */
+const _parseRedirect = (args: string[]) => {
+  const redirectionIndex = args.findIndex(
+    (arg) => arg === '>' || arg === '1>' || arg === '2>'
+  );
+
+  if (redirectionIndex === -1) {
+    return {
+      files: args,
+      redirect: null,
+      destination: null,
+    };
+  }
+
+  return {
+    files: args.slice(0, redirectionIndex),
+    redirect: args[redirectionIndex],
+    destination: args[redirectionIndex + 1],
+  };
+};
+
+/**
+ * Read a list of files and return the file output and any
+ * errors that occur while reading.
+ * @param files list of files to read
+ * @returns object with res and errors
+ */
+const _readFiles = (files: string[]) => {
+  let res = '';
+  const errors: string[] = [];
+  for (const file of files) {
+    try {
+      res += fs.readFileSync(file, 'utf8');
+    } catch (e) {
+      const err = `cat: ${file}: No such file or directory`;
+      errors.push(err);
+    }
+  }
+  return { res, errors };
+};
 
 const _getArgsInQuotes = (input: string, type: 'single' | 'double') => {
   // replace instance of two single or double quotes next to each other with empty space
