@@ -209,8 +209,13 @@ rl.prompt();
  * @returns object with files, redirect, and destination
  */
 const _parseRedirect = (args: string[]) => {
-  const redirectionIndex = args.findIndex((arg) =>
-    redirectOutputs.includes(arg)
+  const redirectionIndex = args.findIndex(
+    (arg) =>
+      arg === '>' ||
+      arg === '1>' ||
+      arg === '>>' ||
+      arg === '1>>' ||
+      arg === '2>'
   );
 
   if (redirectionIndex === -1) {
