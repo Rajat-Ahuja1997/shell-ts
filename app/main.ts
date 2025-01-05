@@ -47,9 +47,18 @@ rl.on('line', (resp) => {
   switch (command) {
     case 'echo': {
       const redirect = args[1];
-      if (redirect === '>' || redirect === '1>') {
+      if (redirect === '>' || redirect === '1>' || redirect === '2>') {
         const destination = args[2];
-        fs.writeFileSync(destination, args[0]);
+        if (redirect === '2>') {
+          try {
+            console.log(args[0]);
+            fs.writeFileSync(destination, '');
+          } catch (e) {
+            fs.writeFileSync(destination, args[0]);
+          }
+        } else {
+          fs.writeFileSync(destination, args[0]);
+        }
       } else {
         console.log(args.join(' '));
       }
@@ -100,38 +109,63 @@ rl.on('line', (resp) => {
       break;
     case 'ls': {
       const dir = args[0] ? args[0] : process.cwd();
-      const contents = fs.readdirSync(dir).sort();
-
       const redirect = args[1];
-      if (redirect === '>' || redirect === '1>') {
-        const destination = args[2];
-        fs.writeFileSync(destination, contents.join('\n'));
-      } else {
-        console.log(contents.join('\n'));
+      const destination = args[2];
+
+      const error = `ls: ${dir}: No such file or directory`;
+      try {
+        const contents = fs.readdirSync(dir).sort();
+
+        if (redirect === '>' || redirect === '1>') {
+          fs.writeFileSync(destination, contents.join('\n'));
+        } else {
+          console.log(contents.join('\n'));
+        }
+      } catch (e) {
+        if (redirect === '2>') {
+          fs.writeFileSync(destination, error);
+        } else {
+          console.log(error);
+        }
       }
       break;
     }
     case 'cat':
       let res = '';
       let redirect = false;
+      let redirectErr = false;
       let destination = '';
+      const errors: string[] = [];
+
       for (let i = 0; i < args.length; i++) {
         const arg = args[i];
-        if (arg === '>' || arg === '1>') {
-          redirect = true;
+        if (arg === '>' || arg === '1>' || arg === '2>') {
+          if (arg === '2>') {
+            redirectErr = true;
+          } else {
+            redirect = true;
+          }
           destination = args[i + 1];
           break;
         }
         try {
           res += fs.readFileSync(arg, 'utf8');
         } catch (e) {
-          console.log(`cat: ${arg}: No such file or directory`);
+          const err = `cat: ${arg}: No such file or directory`;
+          errors.push(err);
         }
       }
       if (!redirect) {
         console.log(res.trim());
       } else {
         fs.writeFileSync(destination, res);
+      }
+      if (errors.length > 0) {
+        if (redirectErr) {
+          fs.writeFileSync(destination, errors.join('\n'));
+        } else {
+          console.log(errors.join('\n'));
+        }
       }
       break;
     case 'touch':
