@@ -49,14 +49,16 @@ rl.on('line', (resp) => {
   switch (command) {
     case 'echo': {
       const { files, redirect, destination } = _parseRedirect(args);
+      const { errors } = _readFiles(files);
+
       // output is the files joined by spaces with newlines between each file
       const output = files.join(' ');
-      if (redirect === '2>') {
+      if (redirect === '2>' || redirect === '2>>') {
         try {
           console.log(output);
           fs.appendFileSync(destination, '');
         } catch (e) {
-          fs.appendFileSync(destination, output);
+          fs.appendFileSync(destination, errors.join('\n'));
         }
       } else if (redirect && redirectOutputs.includes(redirect)) {
         fs.appendFileSync(destination, output + '\n');
@@ -122,10 +124,11 @@ rl.on('line', (resp) => {
           console.log(contents.join('\n'));
         }
       } catch (e) {
-        if (redirect === '2>') {
+        if (redirect === '2>' || redirect === '2>>') {
           fs.appendFileSync(destination, error);
         } else {
           console.log(error);
+          fs.appendFileSync(destination, '');
         }
       }
       break;
@@ -134,9 +137,9 @@ rl.on('line', (resp) => {
       const { files, redirect, destination } = _parseRedirect(args);
       const { res, errors } = _readFiles(files);
 
-      if (redirect === '2>') {
+      if (redirect === '2>' || redirect === '2>>') {
         if (errors.length > 0) {
-          fs.writeFileSync(destination, errors.join('\n'));
+          fs.appendFileSync(destination, `${errors.join(' ')}\n`);
         }
         if (res) {
           console.log(res.trim());
@@ -215,7 +218,8 @@ const _parseRedirect = (args: string[]) => {
       arg === '1>' ||
       arg === '>>' ||
       arg === '1>>' ||
-      arg === '2>'
+      arg === '2>' ||
+      arg === '2>>'
   );
 
   if (redirectionIndex === -1) {
