@@ -46,23 +46,20 @@ rl.on('line', (resp) => {
 
   switch (command) {
     case 'echo': {
-      const redirect = args[1];
-      if (redirect === '>' || redirect === '1>' || redirect === '2>') {
-        const destination = args[2];
-        if (redirect === '2>') {
-          try {
-            console.log(args[0]);
-            fs.writeFileSync(destination, '');
-          } catch (e) {
-            fs.writeFileSync(destination, args[0]);
-          }
-        } else {
-          fs.writeFileSync(destination, args[0]);
+      const { files, redirect, destination } = _parseRedirect(args);
+      const output = files.join(' ');
+      if (redirect === '2>') {
+        try {
+          console.log(output);
+          fs.writeFileSync(destination, '');
+        } catch (e) {
+          fs.writeFileSync(destination, output);
         }
+      } else if (redirect === '>' || redirect === '1>') {
+        fs.writeFileSync(destination, output);
       } else {
-        console.log(args.join(' '));
+        console.log(output);
       }
-
       break;
     }
     case 'type':
