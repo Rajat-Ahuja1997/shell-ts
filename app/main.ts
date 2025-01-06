@@ -14,6 +14,8 @@ const shellCommands = [
   'rm',
   'history',
   'cp',
+  'rmdir',
+  'mkdir',
 ];
 
 const redirectOutputs = ['>', '1>', '>>', '1>>'];
@@ -191,6 +193,29 @@ rl.on('line', (resp) => {
         break;
       }
       fs.copyFileSync(source, destination);
+      break;
+    }
+    case 'mkdir': {
+      const dir = args[0];
+      if (!dir) {
+        console.log('mkdir: missing directory to create');
+        break;
+      }
+      fs.mkdirSync(dir, { recursive: true });
+      break;
+    }
+    case 'rmdir': {
+      const dir = args[0];
+      if (!dir) {
+        console.log('rmdir: missing directory to remove');
+        break;
+      }
+      try {
+        const dirPath = path.join(process.cwd(), dir);
+        fs.rmSync(dirPath, { recursive: true });
+      } catch (e) {
+        console.log(`rmdir: ${dir}: No such file or directory`);
+      }
       break;
     }
     default:
