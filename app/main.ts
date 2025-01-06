@@ -65,6 +65,7 @@ rl.on('line', (resp) => {
         }
       } else if (redirect && redirectOutputs.includes(redirect)) {
         fs.appendFileSync(destination, output + '\n');
+        fs.symlink;
       } else {
         console.log(output);
       }
